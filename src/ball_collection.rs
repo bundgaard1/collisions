@@ -3,9 +3,8 @@ use crate::ball::Ball;
 use crate::constants::*;
 use raylib::prelude::*;
 
-
-
 pub trait BallCollection {
+    fn new() -> Self;
     fn create_balls(&mut self, count: usize);
     fn update(&mut self, delta: f32);
     fn draw(&mut self, d: &mut RaylibDrawHandle);
@@ -15,24 +14,13 @@ pub struct SimpleBallCollection  {
     balls : Vec<Ball>
 }
 
-impl SimpleBallCollection {
-    pub fn new() -> Self {
+impl BallCollection for SimpleBallCollection {
+
+    fn new() -> Self {
         SimpleBallCollection {
             balls: Vec::new()
         }
     }
-
-    pub fn total_enery(&self) -> f32 {
-        let mut total: f32 = 0.0;
-        for c in &self.balls {
-            total += c.vel.length_sqr() * BALL_MASS; 
-        }
-        total
-    }
-
-}
-
-impl BallCollection for SimpleBallCollection {
     
     fn create_balls(&mut self, count: usize) { 
         for _i in 0..count {

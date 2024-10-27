@@ -1,14 +1,8 @@
-
 use raylib::prelude::*;
-
-use std::cell::RefCell;
-use crate::ball::Ball;
 
 pub trait Point {
     fn pos(&self) -> Vector2;
 }
-
-
 
 #[derive(Copy, Clone)]
 pub struct Quad {
@@ -79,7 +73,7 @@ pub struct QTNode {
     quad: Quad,
     children: usize,                // index to start of childen in Quadtree.nodes, 
                                     // if 0 then no childen
-    ball_indices: Vec<usize>,              
+    points_indices: Vec<usize>,              
 }
 
 impl QTNode {
@@ -87,7 +81,7 @@ impl QTNode {
         QTNode {
             quad ,
             children: 0 ,
-            ball_indices: Vec::new(),
+            points_indices: Vec::new(),
         }
     }
 
@@ -98,27 +92,27 @@ impl QTNode {
         self.children == 0
     }
     pub fn is_empty(&self) -> bool {
-        self.ball_indices.len() == 0
+        self.points_indices.len() == 0
     }
 }
 
 
 
 // Quadtree
-pub struct Quadtree {
-    pub balls:    Vec<Ball>,      // We put the balls here and the indexes are held in the nodes.    
+pub struct Quadtree<T: Point> {
+    pub points:    Vec<T>,        // We put the points here and the indexes are held in the nodes.    
     nodes:        Vec<QTNode> ,   // We put the nodes beside each other in space.
     boundary:     Quad,         
     split_thresh: usize,          // Threshhold for when to split
     min_size:     f32,            // Minimum size of quad where subdividing makes no sense.
 }
 
-impl Quadtree {
+impl<T: Point> Quadtree<T> {
     pub const ROOT: usize = 0;
 
     pub fn new(boundary: Quad, split_thresh: usize, min_size: f32) -> Self {
         Quadtree {
-            balls: Vec::new(),
+            points: Vec::new(),
             nodes: Vec::new(),
             boundary,
             split_thresh,
@@ -132,9 +126,10 @@ impl Quadtree {
         self.nodes.push(QTNode::new(self.boundary)); // The root node
     }
 
-    pub fn push(&mut self, b: Ball) {
-        self.balls.push(b);
-        self.insert(b.pos, self.balls.len()-1);
+    pub fn push(&mut self, point: T) {
+        let pos = point.pos();
+        self.points.push(point);
+        self.insert(pos, self.points.len()-1);
     }
 
     fn insert(&mut self, pos: Vector2, index: usize) {
@@ -150,10 +145,10 @@ impl Quadtree {
             node = self.nodes[node].children + quadrant;
         }
 
-        self.nodes[node].ball_indices.push(index); // Add the index of the ball to the node 
+        self.nodes[node].points_indices.push(index); // Add the index of the point to the node 
 
         
-        if self.nodes[node].ball_indices.len() > self.split_thresh {  
+        if self.nodes[node].points_indices.len() > self.split_thresh {  
             self.subdivide(node);
         }
     }
@@ -167,16 +162,15 @@ impl Quadtree {
         }
         
 
-        let balls_to_reinsert = self.nodes[node].ball_indices.clone();
+        let points_to_reinsert = self.nodes[node].points_indices.clone();
 
         // Insert point into children
-        for b in balls_to_reinsert {
-
-            let quadrant = self.nodes[node].quad.find_quadrant(self.balls[b].pos);
-            self.nodes[new_children + quadrant].ball_indices.push(b);
+        for i in points_to_reinsert {
+            let quadrant = self.nodes[node].quad.find_quadrant(self.points[i].pos());
+            self.nodes[new_children + quadrant].points_indices.push(i);
         } 
 
-        self.nodes[node].ball_indices.clear();
+        self.nodes[node].points_indices.clear();
         self.nodes[node].children = new_children;
     }
 
@@ -184,7 +178,7 @@ impl Quadtree {
 
         self.clear();
 
-        let positions_and_indices: Vec<_> = self.balls.iter().enumerate().map(|(i, b)| (b.pos, i)).collect();
+        let positions_and_indices: Vec<_> = self.points.iter().enumerate().map(|(i, p)| (p.pos(), i)).collect();
         
         for (pos, i) in positions_and_indices {
             self.insert(pos, i);
@@ -205,9 +199,9 @@ impl Quadtree {
         }
 
         if node.is_leaf() {
-            for b in &node.ball_indices {
-                if range.contains(self.balls[*b].pos) {
-                    result.push(*b);
+            for i in &node.points_indices {
+                if range.contains(self.points[*i].pos()) {
+                    result.push(*i);
                 }
             }
         } else {
@@ -220,7 +214,7 @@ impl Quadtree {
 
 // -------  App specific stuff   --------- 
 
-impl Quadtree {
+impl<T: Point> Quadtree<T> {
     pub fn draw_tree(&self, d: &mut raylib::prelude::RaylibDrawHandle) {
         for node in &self.nodes {
             let hs = node.quad.half_size;
@@ -238,7 +232,7 @@ impl Quadtree {
         return self.nodes.len();
     } 
 
-    pub fn total_balls(&self) -> usize {
-        return self.balls.len();
+    pub fn total_points(&self) -> usize {
+        return self.points.len();
     }
 }

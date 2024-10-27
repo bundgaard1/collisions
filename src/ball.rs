@@ -2,11 +2,18 @@ use crate::constants::*;
 
 use rand::Rng;
 use raylib::prelude::*;
+use crate::quadtree::Point;
 
 #[derive(Copy, Clone, PartialEq)]
 pub struct Ball  {
     pub pos: Vector2,
     pub vel: Vector2,
+}
+
+impl Point for Ball {
+    fn pos(&self) -> Vector2 {
+        self.pos
+    }
 }
 
 impl Ball {

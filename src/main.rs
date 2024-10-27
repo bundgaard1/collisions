@@ -4,37 +4,35 @@ mod ball_collection;
 mod ball_collection_qt;
 mod quadtree;
 
+use ball::Ball;
 use constants::*;
 use ball_collection::*;
 use ball_collection_qt::QuadtreeBallCollection;
 use raylib::prelude::*;
 
 fn main() {
-    demo();
+    demo::<SimpleBallCollection>();
+    demo::<QuadtreeBallCollection>();
 }
 
-
-fn demo() {
+fn demo<BC: BallCollection>() {
     let (mut rl, thread) = raylib::init()
         .size(WINDOW_WIDTH, WINDOW_HEIGHT)
         .title("Hello, World")
         .build();
 
-    // Balls
-    // let mut balls = SimpleBallCollection::new();
-    let mut balls = QuadtreeBallCollection::new();
+    let mut ball_collection = BC::new();
 
-    balls.create_balls(N_BALLS as usize);
+    ball_collection.create_balls(N_BALLS as usize);
     
-
     while !rl.window_should_close() {
         let mut d = rl.begin_drawing(&thread);
         
         d.clear_background(Color::BLACK);
 
         // Balls update
-        balls.update(d.get_frame_time());
-        balls.draw(&mut d);
+        ball_collection.update(d.get_frame_time());
+        ball_collection.draw(&mut d);
 
         // FPS
         d.draw_text(&format!("simulation time: {} ms", d.get_frame_time() * 1000.0).as_str(), 12, 12, 18, Color::WHITE);

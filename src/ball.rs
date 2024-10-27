@@ -3,6 +3,7 @@ use crate::constants::*;
 use rand::Rng;
 use raylib::prelude::*;
 
+#[derive(Copy, Clone, PartialEq)]
 pub struct Ball  {
     pub pos: Vector2,
     pub vel: Vector2,
@@ -48,14 +49,15 @@ impl Ball {
         diff < 2.0 * BALL_RADIUS
     }
 
-    pub fn resolve_collision(&mut self, other : &mut Ball) {
+    pub fn resolve_collision(&mut self, other: &mut Ball) {
+
         let mut impact = other.pos - self.pos;
         let mut d = impact.length();
 
         // Push balls away from each other
         let overlap = d - 2.0 * BALL_RADIUS;
-        if overlap > 0.0 { // Extra check, to not fuck it all up
-            return 
+        if overlap > 0.0 { // Extra check, to not fuck it all up lol
+            return;
         }
 
         let offset = impact.normalized().scale_by(overlap / 2.0);
@@ -84,9 +86,6 @@ impl Ball {
         delta_vel_other.scale((-2.0 * m * num) / den);
         other.vel += delta_vel_other;
 
-        
-
     }
     
 }
-

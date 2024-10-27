@@ -1,3 +1,0 @@
-
-Brute-Force:
-5000 particles - r=1.5 

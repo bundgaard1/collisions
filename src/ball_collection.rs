@@ -8,7 +8,7 @@ use raylib::prelude::*;
 pub trait BallCollection {
     fn create_balls(&mut self, count: usize);
     fn update(&mut self, delta: f32);
-    fn draw(&self, d: &mut RaylibDrawHandle);
+    fn draw(&mut self, d: &mut RaylibDrawHandle);
 }
 
 pub struct SimpleBallCollection  {
@@ -44,21 +44,28 @@ impl BallCollection for SimpleBallCollection {
     fn update(&mut self, delta : f32 ) {
         for i in 0..self.balls.len() {
     
-            let (left, right) = self.balls.split_at_mut(i+1);
-            let b = &mut left[i];
+            let b = &mut self.balls[i];
     
             b.update(delta);
-            
-            // Overlap & collisions
-            for b2 in right {
-                if b.overlap(b2) {
-                    b.resolve_collision(b2);
+        }
+        
+        for i in 0..self.balls.len() {
+            let b_pos = self.balls[i].pos; 
+            for j in 0..self.balls.len() {
+                if i != j {
+                    let b = unsafe { &mut *(&mut self.balls[i] as *mut Ball) };
+                    let b2 = unsafe { &mut *(&mut self.balls[j] as *mut Ball) };
+        
+                    if b.overlap(b2) {
+                        b.resolve_collision(b2);
+                    }
                 }
             }
         }
+
     }
 
-    fn draw(&self, d: &mut RaylibDrawHandle) {
+    fn draw(&mut self, d: &mut RaylibDrawHandle) {
         for b in &self.balls{
             d.draw_circle(b.pos.x as i32, b.pos.y as i32, BALL_RADIUS, Color::ROYALBLUE);
         } 

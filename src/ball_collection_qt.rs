@@ -10,7 +10,6 @@ use raylib::prelude::*;
 
 
 pub struct QuadtreeBallCollection {
-    balls: Vec<Ball>,
     quadtree: Quadtree,
 }
 
@@ -22,8 +21,7 @@ impl QuadtreeBallCollection {
         };
 
         Self {
-            balls: Vec::new(),
-            quadtree: Quadtree::new(screen_quad, 8, BALL_RADIUS*2.0)
+            quadtree: Quadtree::new(screen_quad, 16, BALL_RADIUS*2.0)
         }
     }
 
@@ -35,48 +33,63 @@ impl QuadtreeBallCollection {
 impl BallCollection for QuadtreeBallCollection {
 
     fn create_balls(&mut self, count: usize) { 
+        self.quadtree.clear();
         for _i in 0..count {
             let b = Ball::new_random();
-            self.balls.push(b);  
+            self.quadtree.push(b);
+
         }
     }
 
-    fn update(&mut self, delta: f32) {
-        self.quadtree.clear();
-        let mut nearby_points: Vec<usize> = Vec::new();
-
-        for i in 0..self.balls.len() {
-            self.balls[i].update(delta);
-            let b = &self.balls[i];
-            self.quadtree.insert((b.pos, i));
+    fn update(&mut self, delta: f32) { 
+        for b in &mut self.quadtree.balls {
+            b.update(delta);
         }
 
-        // Second pass: resolve collisions
-        for i in 0..self.balls.len() {
-            let b_pos = self.balls[i].pos;
-            self.quadtree.query_range(&mut nearby_points, Quad { center: b_pos, half_size: constants::BALL_RADIUS * 1.5 });
-
-            for &j in &nearby_points {
+        // Rebuild the quadtree, based on the new positions
+        self.quadtree.rebuild();
+        
+        for i in 0..self.quadtree.balls.len() {
+            let b_pos = self.quadtree.balls[i].pos;
+            let potential_collisions = self.quadtree.query(Quad { center: b_pos, half_size: BALL_RADIUS * 2.0 });
+        
+            for &j in &potential_collisions {
                 if i != j {
-                    let (left, right) = self.balls.split_at_mut(j);
-                    if i < j {
-                        left[i].resolve_collision(&mut right[0]);
+                    let b = unsafe { &mut *(&mut self.quadtree.balls[i] as *mut Ball) };
+                    let b2 = unsafe { &mut *(&mut self.quadtree.balls[j] as *mut Ball) };
+        
+                    if b.overlap(b2) {
+                        b.resolve_collision(b2);
                     }
                 }
             }
-
-            nearby_points.clear();
         }
-       
-        println!("Total nodes: {}",self.quadtree.total_nodes())
+
+        
     }
 
     
 
-    fn draw(&self, d: &mut raylib::prelude::RaylibDrawHandle) {
-        for b in &self.balls{
-            d.draw_circle(b.pos.x as i32, b.pos.y as i32, BALL_RADIUS, Color::ROYALBLUE);
-        } 
-        // self.quadtree.draw_tree(d);
+    fn draw(&mut self, d: &mut raylib::prelude::RaylibDrawHandle) {
+        for b in &self.quadtree.balls {
+            d.draw_circle(b.pos.x as i32, b.pos.y as i32, BALL_RADIUS as f32, Color::WHITE);
+        }
+        self.quadtree.draw_tree(d);
+        
+        // Draw a range around the mouse
+        let mouse = d.get_mouse_position();
+
+        let range = Quad {
+            center: mouse,
+            half_size: 50.0,
+        };
+        self.quadtree.query(range).iter().for_each(|&i| {
+            let b = &self.quadtree.balls[i];
+            d.draw_circle(b.pos.x as i32, b.pos.y as i32, BALL_RADIUS as f32, Color::RED);
+        });
+
+        d.draw_rectangle_lines(range.center.x as i32 - range.half_size as i32, range.center.y as i32 - range.half_size as i32, (range.half_size*2.0) as i32, (range.half_size*2.0) as i32, Color::RED);
+
+        
     }
 }

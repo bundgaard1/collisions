@@ -10,22 +10,21 @@ use ball_collection_qt::QuadtreeBallCollection;
 use raylib::prelude::*;
 
 fn main() {
-
     demo();
 }
 
 
 fn demo() {
-    // let mut balls = SimpleBallCollection::new();
-    let mut balls = QuadtreeBallCollection::new();
-
-    balls.create_balls(N_BALLS as usize);
-    
-
     let (mut rl, thread) = raylib::init()
         .size(WINDOW_WIDTH, WINDOW_HEIGHT)
         .title("Hello, World")
         .build();
+
+    // Balls
+    // let mut balls = SimpleBallCollection::new();
+    let mut balls = QuadtreeBallCollection::new();
+
+    balls.create_balls(N_BALLS as usize);
     
 
     while !rl.window_should_close() {

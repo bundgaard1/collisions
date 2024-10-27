@@ -38,7 +38,6 @@ impl BallCollection for SimpleBallCollection {
         }
         
         for i in 0..self.balls.len() {
-            let b_pos = self.balls[i].pos; 
             for j in 0..self.balls.len() {
                 if i != j {
                     let b = unsafe { &mut *(&mut self.balls[i] as *mut Ball) };

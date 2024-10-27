@@ -25,7 +25,7 @@ impl BallCollection for QuadtreeBallCollection {
         };
     
         Self {
-            quadtree: Quadtree::new(screen_quad, 4, BALL_RADIUS*2.0)
+            quadtree: Quadtree::new(screen_quad, 2, BALL_RADIUS*2.0)
         }
     }
 

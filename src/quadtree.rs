@@ -219,7 +219,7 @@ impl<T: Point> Quadtree<T> {
         for node in &self.nodes {
             let hs = node.quad.half_size;
             let top_left = node.quad.center - Vector2{x: hs,y: hs};
-            d.draw_rectangle_lines(top_left.x as i32, top_left.y as i32, (hs*2.0) as i32, (hs*2.0) as i32, Color::WHITE);
+            d.draw_rectangle_lines(top_left.x as i32, top_left.y as i32, (hs*2.0) as i32, (hs*2.0) as i32, Color::WHITE.alpha(0.5));
         }
 
     }
